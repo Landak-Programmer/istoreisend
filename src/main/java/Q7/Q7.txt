@@ -1,0 +1,122 @@
+
+The code snippet shows how it connects to Elasticsearch and do a search
+
+=========================================================================
+
+def connect_elasticsearch():
+_es = None
+_es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
+if _es.ping():
+print('Connected')
+else:
+print('Connection failed!')
+return _es
+
+# This part use to connect to elasticsearch in port 9200(default ES port) locally
+
+=========================================================================
+
+def search(es_object, index_name, search):
+res = es_object.search(index=index_name, body=search)
+return res
+
+# This part do the actual query to the elasticsearch
+
+=========================================================================
+
+def read_settings(es_object, str_monitor, csv_full_path):
+port = 465
+password = 'maytheforce321'
+sender = 'yoda@star.wars'
+receivers = ['grogu@star.wars']
+strnotify = ""
+str_must=""
+str_must_not=""
+
+### some configuration
+
+
+
+dfsettings=pd.read_csv(csv_full_path)
+dfresult = dfsettings[dfsettings['script'].str.match(str_monitor)]
+
+### using panda to read csv. Get script based on the str_monitor value
+
+
+
+if dfresult.shape[0]>0:
+dfresult.sort_values(by=['step'], ascending=True)
+for i, row in dfresult.iterrows():
+display(dfresult)
+
+### check if row is more than 1, sort, then do iteration
+
+
+
+if ((not pd.isna(dfresult.loc[i, "must"])) or (not pd.isna(dfresult.loc[i, "must-not"]))):
+str_timerange='{"range":{"timestamp":{"gt":"'+dfresult.loc[i, "start"]+'","lt":"'+dfresult.loc[i,
+"end"]+'"}}}'
+
+### see if there is value for the "must" or "must-not" on iteration i inside dataframe, then construct initial str_timerange to query elasticsearch
+
+
+
+if (not pd.isna(dfresult.loc[i, "must"])):
+str_must='{"query_string":{"default_field":"message","query":"'+dfresult.loc[i, "must"]+'"}}'
+str_must=str_must+','+str_timerange
+else:
+str_must=str_timerange
+
+### see if there is value for the "must" on iteration i inside dataframe, then append str_timerange
+
+
+
+if (not pd.isna(dfresult.loc[i, "must-not"])):
+str_must_not='{"query_string":{"default_field":"message","query":"'+dfresult.loc[i,
+"must-not"]+'"}}'
+json_string =
+'{"query":{"bool":{"must":['+str_must+'],"must_not":['+str_must_not+']}},"from":0,"size":10,"sort":[],"aggs":{}}'
+print(json_string)
+
+### see if there is value for the "must-not" on iteration i inside dataframe, then append str_timerange
+
+
+
+search_object = json.loads(json_string)
+result=search(es_object, 'graylog_4', search_object)
+df = pd.json_normalize(result['hits']['hits'])
+df_hits = pd.json_normalize(result['hits']['total'])
+display(df_hits)
+strnotify="Records found"
+else:
+strnotify="Please check the settings."
+
+### do the query into Elasticsearch, then normalize the data
+
+
+
+try:
+mail = smtplib.SMTP_SSL('smtp.gmail.com', port)
+mail.login("email_smtp@innovatusltd.com", password)
+mail.sendmail(sender, receivers, strnotify)
+print("Successfully sent email")
+except SMTPException:
+print("Error: unable to send email")
+
+### send an email for the result using SMTP
+
+=========================================================================
+
+if __name__ == "__main__":
+es = connect_elasticsearch()
+if es is not None:
+_thread.start_new_thread(read_settings,(es, 'B', csv_path))
+_thread.start_new_thread(read_settings,(es, 'A', csv_path))
+
+# Main method. This part is try to connect to elasticsearch and start new thread
+# only if connection is successful
+
+=========================================================================
+
+
+

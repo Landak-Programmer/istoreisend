@@ -1,0 +1,75 @@
+
+
+Pseudo code for FE implementation
+
+=====================================================================
+
+<form action="/location" method="POST">
+    <select name="location" id="location">
+    </select>
+    <button type="submit">Save</button>
+</form>
+
+<script>
+
+function createWebpage(data, dropdownData) {
+    dynamicDropdown('location', dropdownData);
+    selectElement('location', data);
+
+}
+
+// automatically select previous value
+function selectElement(id, valueToSelect) {
+    let element = document.getElementById(id);
+    element.value = valueToSelect;
+}
+
+// create a dynamic dropdown based on backend data
+function dynamicDropdown(id, dropdownData) {
+    let element = document.getElementById(id);
+    for (const val of dropdownData)
+    {
+        var option = document.createElement("option");
+        option.value = val;
+        option.text = val;
+        element.appendChild(option);
+    }
+}
+
+// data from backend
+var data = backendData();
+var dropdownData = backendDropdownData();
+
+// when document ready, load
+$('document').ready(createWebpage(data, dropdownData));
+</script>
+
+=====================================================================
+
+Pseudocode for BE implementation
+
+User Table Schema
+id - bigint(20)
+name - varchar(255) NOT NULL
+location - bigint(20) NULL
+(id primary key, location foreign key)
+
+Location Table Schema
+id - bigint(20)
+location - varchar(255) NOT NULL
+(id primary key)
+
+
+Service
+// user object follows schema
+void updateUser(User changeSet) {
+    User pUser = userRepository.get(changeSet.getId());
+    if (changeSet.getLocation() != null) {
+        location location = locationRepository.get(changeSet.getLocation());
+        pUser.setLocation(location);
+    }
+    userRepository.save(pUser);
+}
+
+
+

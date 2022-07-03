@@ -1,0 +1,17 @@
+1. SELECT e.name, d.description FROM employee e, department d
+WHERE e.department = d.id;
+
+2. SELECT e.name, d.description FROM employee e
+INNER JOIN department d
+ON e.department = d.id;
+
+Answer:
+Both of the result will give the same result. However
+- the performance might be varied based on the database server
+(but this is not that any different due to optimization of the engine itself)
+
+I preferred 2nd option due to better readability. Moreover
+- join should be used to logically join a table, while
+- where is to filter data
+In the 1st option, it hides the intention to join a table through 'where' clause
+Which is for me a bit inappropriate
